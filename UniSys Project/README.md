@@ -103,6 +103,20 @@ Open **http://localhost:3000** — login with `admin@agenticai.demo` / `AgentAdm
 
 ---
 
+## ⚠️ Note on Environment Files
+
+The `.env` files in this repository are **intentionally committed**. They contain only local demo credentials and configuration values — no real secrets, no production keys, no sensitive data.
+
+They are included so that anyone cloning this repo can run the project immediately without any manual configuration. This is a demonstration and academic project — the values are safe to share publicly.
+
+| File | Contains |
+|---|---|
+| `UniSys Project/.env` | Django secret key (insecure default), SQLite config, internal shared key |
+| `agentic-ai-app/backend/.env` | Ollama URL, demo user credentials, internal shared key |
+| `agentic-ai-app/frontend/.env.local` | Local API URL for Next.js |
+
+---
+
 ## Table of Contents
 
 1. [What Is This?](#1-what-is-this)
