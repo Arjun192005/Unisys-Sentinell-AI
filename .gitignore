@@ -124,6 +124,9 @@ next-env.d.ts
 # OS
 Thumbs.db
 Desktop.ini
+__MACOSX/
+.DS_Store
+._*
 
 # Environment variables
 .env
