@@ -62,7 +62,7 @@ Verify: open **http://localhost:3001/health** — should show `"status": "ok"`
 
 ```bash
 cd agentic-ai-app/frontend
-npm install        # first time only
+npm install --legacy-peer-deps        # first time only — flag required
 npm run dev
 ```
 

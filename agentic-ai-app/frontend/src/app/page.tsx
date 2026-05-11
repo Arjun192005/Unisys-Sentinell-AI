@@ -55,6 +55,7 @@ export default function HomePage() {
   }, []);
 
   function handleLogin(user: AuthUser, token: string) {
+    setAuthToken(token);   // set in-memory token so all API calls include Authorization header
     setCurrentUser(user);
     sessionStorage.setItem('auth_token', token);
     loadSessions();

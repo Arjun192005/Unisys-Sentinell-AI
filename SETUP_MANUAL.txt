@@ -270,9 +270,12 @@ Open Terminal 3 and follow these steps.
   STEP 5.2 — Install Node.js dependencies
 --------------------------------------------------------------------------------
 
-  npm install
+  npm install --legacy-peer-deps
 
-  Wait for it to complete.
+  The --legacy-peer-deps flag is REQUIRED.
+  Without it you will get a peer dependency conflict between
+  eslint v8 (used by this project) and eslint-config-next which
+  expects eslint v9. The flag tells npm to ignore this conflict.
 
 --------------------------------------------------------------------------------
   STEP 5.3 — Check the .env.local file
@@ -442,7 +445,87 @@ Open Terminal 3 and follow these steps.
   Ollama starts automatically on Windows boot — no action needed.
 
 ================================================================================
-  SECTION 10 — TROUBLESHOOTING
+  SECTION 10 — KNOWN ISSUES & FIXES (Read Before Running)
+================================================================================
+
+  These issues were found during testing on a fresh machine. All are already
+  fixed in the repo — this section explains what was wrong and what was done.
+
+  --------------------------------------------------------------------------------
+  ISSUE 1 — Frontend install fails with peer dependency conflict
+  --------------------------------------------------------------------------------
+  Symptom:
+    npm ERR! peer eslint@"^9.0.0" from eslint-config-next
+
+  Cause:
+    eslint-config-next requires eslint v9 but this project uses eslint v8.
+
+  Fix (already applied):
+    Always use --legacy-peer-deps when installing frontend:
+      npm install --legacy-peer-deps
+    Next.js pinned to 14.2.3 and eslint-config-next pinned to 14.2.3
+    in package.json — both are compatible with eslint v8.
+
+  --------------------------------------------------------------------------------
+  ISSUE 2 — "Couldn't find a pages directory" error on npm run dev
+  --------------------------------------------------------------------------------
+  Symptom:
+    Error: Couldn't find a `pages` directory.
+    Please create one under the project root.
+
+  Cause:
+    Old Next.js version (9.x) does not support the App Router (src/app/ folder).
+    This project uses App Router which requires Next.js 14+.
+
+  Fix (already applied):
+    package.json now has "next": "14.2.3" — pinned to a stable version
+    that fully supports App Router.
+
+  --------------------------------------------------------------------------------
+  ISSUE 3 — Module not found: Can't resolve '@/lib/api'
+  --------------------------------------------------------------------------------
+  Symptom:
+    Module not found: Can't resolve '@/lib/api'
+    at src/app/page.tsx line 5
+
+  Cause:
+    src/lib/api.ts was missing from the repository.
+
+  Fix (already applied):
+    src/lib/api.ts is now in the repo with all required exports:
+      setAuthToken, authApi, sessionsApi, chatApi, modelsApi, rulesApi
+
+  --------------------------------------------------------------------------------
+  ISSUE 4 — 401 Unauthorized on all API calls after login
+  --------------------------------------------------------------------------------
+  Symptom:
+    POST http://localhost:3001/api/sessions  401 (Unauthorized)
+    POST http://localhost:3001/api/chat/stream  401 (Unauthorized)
+
+  Cause:
+    handleLogin() in page.tsx saved the token to sessionStorage but
+    never called setAuthToken(token). Every API request was sent
+    without the Authorization header.
+
+  Fix (already applied):
+    page.tsx handleLogin() now calls setAuthToken(token) before
+    anything else. The token is set in memory immediately on login.
+
+  --------------------------------------------------------------------------------
+  ISSUE 5 — "ollama serve" throws address already in use
+  --------------------------------------------------------------------------------
+  Symptom:
+    Error: listen tcp 127.0.0.1:11434: bind: address already in use
+
+  Cause:
+    Ollama is already running as a background service (normal on Windows).
+
+  Fix:
+    This is NOT an error. Ollama is already running — just proceed.
+    You do not need to run "ollama serve" manually on Windows.
+
+================================================================================
+  SECTION 11 — TROUBLESHOOTING
 ================================================================================
 
   PROBLEM: Chat not working — AI not responding at all
@@ -501,7 +584,7 @@ Open Terminal 3 and follow these steps.
     - Or restart your computer and try again
 
 ================================================================================
-  SECTION 11 — PORT REFERENCE
+  SECTION 12 — PORT REFERENCE
 ================================================================================
 
   Service                | Port  | URL
@@ -512,7 +595,7 @@ Open Terminal 3 and follow these steps.
   Ollama LLM             | 11434 | http://localhost:11434
 
 ================================================================================
-  SECTION 12 — FILE STRUCTURE REFERENCE
+  SECTION 13 — FILE STRUCTURE REFERENCE
 ================================================================================
 
   Project Root/
