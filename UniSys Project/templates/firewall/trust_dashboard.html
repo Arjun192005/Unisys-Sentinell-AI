@@ -1,0 +1,329 @@
+{% extends "base.html" %}
+{% block title %}Trust Dashboard – Sentinell.AI{% endblock %}
+{% block page_title %}<i class="bi bi-diagram-3 me-2" style="color:var(--primary)"></i>Trust & Provenance Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-wrap fade-in">
+
+  <div class="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-2 slide-up stagger-1">
+    <div>
+      <h3 class="page-title">Trust & Provenance Analytics</h3>
+      <p class="page-subtitle">Real-time behavioral anomaly detection and semantic attack pattern analysis.</p>
+    </div>
+    <div class="d-flex gap-2">
+      <select id="time-filter" class="log-filter-select" onchange="window.location.href='?days='+this.value">
+        <option value="1" {% if days == 1 %}selected{% endif %}>Last 24 hours</option>
+        <option value="7" {% if days == 7 %}selected{% endif %}>Last 7 days</option>
+        <option value="30" {% if days == 30 %}selected{% endif %}>Last 30 days</option>
+        <option value="90" {% if days == 90 %}selected{% endif %}>Last 90 days</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════ -->
+  <!-- Top Stats -->
+  <!-- ══════════════════════════════════════════════════════════════════ -->
+  <div class="row g-3 mb-4 slide-up stagger-2">
+    <div class="col-md-3">
+      <div class="stat-card stat-card-blue">
+        <div class="stat-icon-wrap si-blue"><i class="bi bi-journal-check"></i></div>
+        <div class="stat-label">Total Submissions</div>
+        <div class="stat-value">{{ total_submissions }}</div>
+        <div class="stat-trend mt-2">
+          <i class="bi bi-clock" style="color:var(--info)"></i>
+          <span style="color:var(--text-3)">Last {{ days }} day{{ days|pluralize }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-3">
+      <div class="stat-card stat-card-teal">
+        <div class="stat-icon-wrap si-teal"><i class="bi bi-shield-check"></i></div>
+        <div class="stat-label">Avg Trust Score</div>
+        <div class="stat-value" style="color:{% if avg_trust >= 0.75 %}var(--success){% elif avg_trust >= 0.5 %}#f59e0b{% else %}var(--danger){% endif %}">
+          {% widthratio avg_trust 1 100 %}%
+        </div>
+        <div class="stat-trend mt-2">
+          <i class="bi bi-graph-up" style="color:var(--success)"></i>
+          <span style="color:var(--text-3)">Provenance layer</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-3">
+      <div class="stat-card stat-card-purple">
+        <div class="stat-icon-wrap si-purple"><i class="bi bi-brain"></i></div>
+        <div class="stat-label">Avg Semantic Confidence</div>
+        <div class="stat-value" style="color:{% if avg_semantic_conf >= 0.8 %}var(--danger){% elif avg_semantic_conf >= 0.65 %}#f59e0b{% else %}var(--success){% endif %}">
+          {% widthratio avg_semantic_conf 1 100 %}%
+        </div>
+        <div class="stat-trend mt-2">
+          <i class="bi bi-exclamation-triangle" style="color:var(--warning)"></i>
+          <span style="color:var(--text-3)">Semantic layer</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-3">
+      <div class="stat-card stat-card-orange">
+        <div class="stat-icon-wrap si-orange"><i class="bi bi-exclamation-triangle-fill"></i></div>
+        <div class="stat-label">High-Risk Submissions</div>
+        <div class="stat-value" style="color:var(--danger)">{{ high_risk_logs|length }}</div>
+        <div class="stat-trend mt-2">
+          <i class="bi bi-shield-x" style="color:var(--danger)"></i>
+          <span style="color:var(--text-3)">Trust < 50% or Semantic > 80%</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════ -->
+  <!-- Charts Row -->
+  <!-- ══════════════════════════════════════════════════════════════════ -->
+  <div class="row g-3 mb-4 slide-up stagger-3">
+
+    <!-- Trust Level Breakdown -->
+    <div class="col-lg-4">
+      <div class="card h-100">
+        <div class="card-header"><i class="bi bi-pie-chart-fill me-1"></i>Trust Level Distribution</div>
+        <div class="card-body d-flex flex-column justify-content-center">
+          <div class="trust-breakdown-chart">
+            {% with total=trust_breakdown.TRUSTED|add:trust_breakdown.SEMI_TRUSTED|add:trust_breakdown.UNTRUSTED %}
+            <div class="trust-bar-row">
+              <div class="trust-bar-label">Trusted</div>
+              <div class="trust-bar-track">
+                <div class="trust-bar-fill" style="width:{% if total > 0 %}{% widthratio trust_breakdown.TRUSTED total 100 %}{% else %}0{% endif %}%;background:var(--success)"></div>
+              </div>
+              <div class="trust-bar-val">{{ trust_breakdown.TRUSTED }}</div>
+            </div>
+            <div class="trust-bar-row">
+              <div class="trust-bar-label">Semi-Trusted</div>
+              <div class="trust-bar-track">
+                <div class="trust-bar-fill" style="width:{% if total > 0 %}{% widthratio trust_breakdown.SEMI_TRUSTED total 100 %}{% else %}0{% endif %}%;background:#f59e0b"></div>
+              </div>
+              <div class="trust-bar-val">{{ trust_breakdown.SEMI_TRUSTED }}</div>
+            </div>
+            <div class="trust-bar-row">
+              <div class="trust-bar-label">Untrusted</div>
+              <div class="trust-bar-track">
+                <div class="trust-bar-fill" style="width:{% if total > 0 %}{% widthratio trust_breakdown.UNTRUSTED total 100 %}{% else %}0{% endif %}%;background:var(--danger)"></div>
+              </div>
+              <div class="trust-bar-val">{{ trust_breakdown.UNTRUSTED }}</div>
+            </div>
+            {% endwith %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Source Type Breakdown -->
+    <div class="col-lg-4">
+      <div class="card h-100">
+        <div class="card-header"><i class="bi bi-diagram-2-fill me-1"></i>Source Type Distribution</div>
+        <div class="card-body d-flex flex-column justify-content-center">
+          <div class="trust-breakdown-chart">
+            {% with total=source_breakdown.TEXT|add:source_breakdown.FILE|add:source_breakdown.PASTED|add:source_breakdown.RETRIEVED %}
+            <div class="trust-bar-row">
+              <div class="trust-bar-label"><i class="bi bi-keyboard me-1" style="color:var(--success)"></i>Text</div>
+              <div class="trust-bar-track">
+                <div class="trust-bar-fill" style="width:{% if total > 0 %}{% widthratio source_breakdown.TEXT total 100 %}{% else %}0{% endif %}%;background:var(--success)"></div>
+              </div>
+              <div class="trust-bar-val">{{ source_breakdown.TEXT }}</div>
+            </div>
+            <div class="trust-bar-row">
+              <div class="trust-bar-label"><i class="bi bi-file-earmark me-1" style="color:#60a5fa"></i>File</div>
+              <div class="trust-bar-track">
+                <div class="trust-bar-fill" style="width:{% if total > 0 %}{% widthratio source_breakdown.FILE total 100 %}{% else %}0{% endif %}%;background:#60a5fa"></div>
+              </div>
+              <div class="trust-bar-val">{{ source_breakdown.FILE }}</div>
+            </div>
+            <div class="trust-bar-row">
+              <div class="trust-bar-label"><i class="bi bi-clipboard me-1" style="color:#f59e0b"></i>Pasted</div>
+              <div class="trust-bar-track">
+                <div class="trust-bar-fill" style="width:{% if total > 0 %}{% widthratio source_breakdown.PASTED total 100 %}{% else %}0{% endif %}%;background:#f59e0b"></div>
+              </div>
+              <div class="trust-bar-val">{{ source_breakdown.PASTED }}</div>
+            </div>
+            <div class="trust-bar-row">
+              <div class="trust-bar-label"><i class="bi bi-globe me-1" style="color:var(--danger)"></i>Retrieved</div>
+              <div class="trust-bar-track">
+                <div class="trust-bar-fill" style="width:{% if total > 0 %}{% widthratio source_breakdown.RETRIEVED total 100 %}{% else %}0{% endif %}%;background:var(--danger)"></div>
+              </div>
+              <div class="trust-bar-val">{{ source_breakdown.RETRIEVED }}</div>
+            </div>
+            {% endwith %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Top Anomalies -->
+    <div class="col-lg-4">
+      <div class="card h-100">
+        <div class="card-header"><i class="bi bi-exclamation-circle-fill me-1"></i>Top Behavioral Anomalies</div>
+        <div class="card-body">
+          {% if anomaly_counts %}
+          <div class="d-flex flex-column gap-2">
+            {% for anomaly, count in anomaly_counts %}
+            <div class="d-flex align-items-center justify-content-between p-2 rounded-3" style="background:var(--bg-1);border:1px solid var(--border)">
+              <div style="font-size:0.8rem;color:var(--text);font-weight:500">{{ anomaly|cut:"_"|title }}</div>
+              <span class="badge" style="background:rgba(251,191,36,0.15);color:#d97706;font-size:0.7rem;font-weight:700;padding:3px 8px">{{ count }}</span>
+            </div>
+            {% endfor %}
+          </div>
+          {% else %}
+          <div class="text-center py-3" style="color:var(--text-3);font-size:0.83rem">
+            <i class="bi bi-check-circle-fill" style="font-size:2rem;display:block;margin-bottom:0.5rem;color:var(--success)"></i>
+            No anomalies detected in this period.
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════ -->
+  <!-- Semantic Attack Vectors -->
+  <!-- ══════════════════════════════════════════════════════════════════ -->
+  <div class="row g-3 mb-4 slide-up stagger-4">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header"><i class="bi bi-shield-exclamation me-1"></i>Top Semantic Attack Vectors</div>
+        <div class="card-body">
+          {% if vector_counts %}
+          <div class="row g-2">
+            {% for vector, count in vector_counts %}
+            <div class="col-md-4">
+              <div class="attack-vector-card">
+                <div class="d-flex align-items-center justify-content-between mb-1">
+                  <div style="font-size:0.82rem;font-weight:600;color:var(--text)">{{ vector|cut:"_"|title }}</div>
+                  <span class="badge" style="background:var(--danger-g);color:var(--danger);font-size:0.7rem;font-weight:700">{{ count }}</span>
+                </div>
+                <div style="font-size:0.7rem;color:var(--text-3)">Detected {{ count }} time{{ count|pluralize }}</div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          {% else %}
+          <div class="text-center py-3" style="color:var(--text-3);font-size:0.83rem">
+            <i class="bi bi-check-circle-fill" style="font-size:2rem;display:block;margin-bottom:0.5rem;color:var(--success)"></i>
+            No semantic attack vectors detected in this period.
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════ -->
+  <!-- Recent High-Risk Submissions -->
+  <!-- ══════════════════════════════════════════════════════════════════ -->
+  <div class="row g-3 slide-up stagger-5">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header d-flex align-items-center justify-content-between">
+          <span><i class="bi bi-shield-x me-1"></i>Recent High-Risk Submissions</span>
+          <span class="badge" style="background:var(--danger-g);color:var(--danger);font-size:0.7rem;font-weight:700">{{ high_risk_logs|length }} entries</span>
+        </div>
+        <div class="card-body" style="padding:0">
+          {% if high_risk_logs %}
+          <div class="table-responsive">
+            <table class="logs-table">
+              <thead>
+                <tr>
+                  <th>Timestamp</th>
+                  <th>User</th>
+                  <th>Trust</th>
+                  <th>Semantic</th>
+                  <th>Source</th>
+                  <th>Anomalies</th>
+                  <th>Action</th>
+                  <th>Detail</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for log in high_risk_logs %}
+                <tr>
+                  <td style="font-size:0.8rem;white-space:nowrap;color:var(--text-3)">{{ log.timestamp|date:"Y-m-d H:i" }}</td>
+                  <td><strong style="color:var(--text)">{{ log.user.username }}</strong></td>
+                  <td>
+                    <span class="trust-badge trust-{{ log.trust_level|lower|cut:'_' }}" style="font-size:0.7rem">
+                      {% widthratio log.trust_score 1 100 %}%
+                    </span>
+                  </td>
+                  <td>
+                    <span class="semantic-badge" style="font-size:0.7rem;{% if log.semantic_confidence >= 0.8 %}background:var(--danger-g);color:var(--danger){% elif log.semantic_confidence >= 0.65 %}background:rgba(251,191,36,0.1);color:#d97706{% else %}background:var(--success-g);color:var(--success){% endif %}">
+                      {% widthratio log.semantic_confidence 1 100 %}%
+                    </span>
+                  </td>
+                  <td>
+                    <span class="source-badge" style="font-size:0.7rem">
+                      {% if log.source_type == 'TEXT' %}<i class="bi bi-keyboard me-1"></i>
+                      {% elif log.source_type == 'FILE' %}<i class="bi bi-file-earmark me-1"></i>
+                      {% elif log.source_type == 'PASTED' %}<i class="bi bi-clipboard me-1"></i>
+                      {% else %}<i class="bi bi-globe me-1"></i>{% endif %}
+                      {{ log.source_type }}
+                    </span>
+                  </td>
+                  <td>
+                    {% if log.anomaly_flags %}
+                    <span class="badge" style="background:rgba(251,191,36,0.1);color:#d97706;font-size:0.65rem">{{ log.anomaly_flags|length }}</span>
+                    {% else %}<span style="color:var(--text-3)">—</span>{% endif %}
+                  </td>
+                  <td><span class="action-badge action-{{ log.action|lower }}">{{ log.action }}</span></td>
+                  <td class="text-center">
+                    <a href="{% url 'log_detail' log.id %}" class="btn-view-detail">
+                      <i class="bi bi-eye"></i>View
+                    </a>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% else %}
+          <div class="text-center py-4" style="color:var(--text-3);font-size:0.83rem">
+            <i class="bi bi-check-circle-fill" style="font-size:2rem;display:block;margin-bottom:0.5rem;color:var(--success)"></i>
+            No high-risk submissions in this period.
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<style>
+/* Trust breakdown chart */
+.trust-breakdown-chart{display:flex;flex-direction:column;gap:12px}
+.trust-bar-row{display:flex;align-items:center;gap:10px}
+.trust-bar-label{font-size:0.8rem;color:var(--text-2);font-weight:500;min-width:100px}
+.trust-bar-track{flex:1;height:10px;background:var(--bg-2);border-radius:5px;overflow:hidden}
+.trust-bar-fill{height:100%;border-radius:5px;transition:width 0.8s ease}
+.trust-bar-val{font-size:0.82rem;font-weight:700;color:var(--text);min-width:30px;text-align:right}
+
+/* Attack vector cards */
+.attack-vector-card{padding:12px;background:var(--bg-1);border:1px solid var(--border);border-radius:10px;transition:all 0.15s ease}
+.attack-vector-card:hover{border-color:var(--danger);box-shadow:0 2px 8px rgba(248,113,113,0.15)}
+
+/* Trust badges */
+.trust-badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:10px;font-weight:600}
+.trust-trusted{background:var(--success-g);color:var(--success)}
+.trust-semitrusted{background:rgba(251,191,36,0.1);color:#d97706}
+.trust-untrusted{background:var(--danger-g);color:var(--danger)}
+
+/* Semantic badge */
+.semantic-badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:10px;font-weight:600}
+
+/* Source badge */
+.source-badge{display:inline-flex;align-items:center;padding:2px 8px;background:var(--bg-1);border:1px solid var(--border);border-radius:10px;font-weight:600;color:var(--text-2)}
+
+/* Orange stat card */
+.stat-card-orange{background:linear-gradient(135deg,rgba(251,146,60,0.08),rgba(251,146,60,0.02));border-color:rgba(251,146,60,0.2)}
+.si-orange{background:rgba(251,146,60,0.15);color:#f59e0b}
+</style>
+{% endblock %}

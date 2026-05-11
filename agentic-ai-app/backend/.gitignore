@@ -1,0 +1,22 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+build/
+
+# Database files
+data/*.db
+data/*.db-journal
+
+# Logs
+*.log
+
+# TypeScript
+*.tsbuildinfo
+
+# Temporary test files
+check_*.js
+test_*.js
+
+# NOTE: .env file is NOT ignored - contains demo credentials only

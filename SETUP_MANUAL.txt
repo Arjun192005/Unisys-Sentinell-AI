@@ -1,0 +1,538 @@
+================================================================================
+         SETUP MANUAL — Sentinell.AI + Agentic AI (Combined System)
+================================================================================
+
+This manual covers the complete setup of both projects on a Windows machine.
+Read every step carefully before starting. Do not skip any step.
+
+There are 4 services that need to run at the same time:
+
+  Service 1 — Sentinell.AI (Django)         → http://localhost:8000
+  Service 2 — Agentic AI Backend (Express)  → http://localhost:3001
+  Service 3 — Agentic AI Frontend (Next.js) → http://localhost:3000
+  Service 4 — Ollama (Local LLM)            → http://localhost:11434
+
+You will need 4 separate terminal windows — one for each service.
+
+================================================================================
+  SECTION 1 — PREREQUISITES (Install These First)
+================================================================================
+
+Before starting, make sure the following are installed on your machine:
+
+  1. Python 3.11 or higher
+     Download: https://www.python.org/downloads/
+     During install — CHECK the box "Add Python to PATH"
+     Verify: open terminal and type:  python --version
+
+  2. Node.js 18 or higher (includes npm)
+     Download: https://nodejs.org/en/download
+     Choose the LTS version
+     Verify: open terminal and type:  node --version
+
+  3. Git (optional but recommended)
+     Download: https://git-scm.com/downloads
+
+  4. Ollama (Local AI model runner)
+     Download: https://ollama.com/download
+     Choose Windows installer
+     Install it — it runs as a background service automatically
+     Verify: open terminal and type:  ollama --version
+
+================================================================================
+  SECTION 2 — OLLAMA SETUP (Local AI Model)
+================================================================================
+
+Ollama runs the AI model completely on your local machine.
+No internet connection is needed after the model is downloaded.
+
+--------------------------------------------------------------------------------
+  STEP 2.1 — Install Ollama
+--------------------------------------------------------------------------------
+
+  1. Go to https://ollama.com/download
+  2. Download the Windows installer (OllamaSetup.exe)
+  3. Run the installer — it installs Ollama as a background service
+  4. After install, Ollama starts automatically on port 11434
+  5. You will see the Ollama icon in your system tray (bottom right)
+
+  Verify Ollama is running:
+  Open a terminal and type:
+    ollama --version
+
+  You should see something like:  ollama version 0.3.x
+
+--------------------------------------------------------------------------------
+  STEP 2.2 — Pull the Required Model
+--------------------------------------------------------------------------------
+
+  The project uses:  qwen2.5-coder:1.5b
+  This is a code-specialized AI model optimized for programming tasks.
+  Size: approximately 1 GB download.
+
+  Open a terminal and run:
+    ollama pull qwen2.5-coder:1.5b
+
+  Wait for the download to complete. You will see a progress bar.
+  This only needs to be done ONCE. The model is stored locally after download.
+
+  Verify the model is downloaded:
+    ollama list
+
+  You should see:
+    NAME                    ID              SIZE    MODIFIED
+    qwen2.5-coder:1.5b      xxxxxxxxxxxx    1.0 GB  x minutes ago
+
+--------------------------------------------------------------------------------
+  STEP 2.3 — Start Ollama (if not already running)
+--------------------------------------------------------------------------------
+
+  Ollama starts automatically after install. But if it is not running:
+
+  Option A — From system tray:
+    Click the Ollama icon in the system tray and select "Start"
+
+  Option B — From terminal:
+    ollama serve
+
+  Verify Ollama is responding:
+  Open a browser and go to:  http://localhost:11434
+  You should see:  Ollama is running
+
+--------------------------------------------------------------------------------
+  STEP 2.4 — Optional: Higher Quality Model
+--------------------------------------------------------------------------------
+
+  If your machine has 8GB+ RAM and a decent GPU, you can use the larger model:
+    ollama pull qwen2.5-coder:7b
+
+  Then update this line in agentic-ai-app/backend/.env:
+    OLLAMA_MODEL=qwen2.5-coder:7b
+
+  The 1.5b model works fine for demos on most machines.
+
+================================================================================
+  SECTION 3 — SENTINELL.AI SETUP (Django — Service 1)
+================================================================================
+
+Open Terminal 1 and follow these steps.
+
+--------------------------------------------------------------------------------
+  STEP 3.1 — Navigate to the project folder
+--------------------------------------------------------------------------------
+
+  cd "UniSys Project"
+
+--------------------------------------------------------------------------------
+  STEP 3.2 — Create a Python virtual environment
+--------------------------------------------------------------------------------
+
+  python -m venv venv
+
+  Activate it (Windows):
+    venv\Scripts\activate
+
+  You should see (venv) at the start of your terminal prompt.
+
+--------------------------------------------------------------------------------
+  STEP 3.3 — Install Python dependencies
+--------------------------------------------------------------------------------
+
+  pip install -r requirements.txt
+
+  This installs Django, cryptography, pdfplumber, pytesseract, and all other
+  required packages. Wait for it to complete.
+
+  NOTE: If pytesseract install fails, that is OK — it is only needed for
+  image OCR. All other features will work without it.
+
+--------------------------------------------------------------------------------
+  STEP 3.4 — Check the .env file
+--------------------------------------------------------------------------------
+
+  The .env file is already configured. Verify it contains:
+
+    DJANGO_SECRET_KEY=django-insecure-change-me-in-production-k8s7d6f5g4h3j2
+    DJANGO_DEBUG=True
+    DB_ENGINE=django.db.backends.sqlite3
+    DB_NAME=db.sqlite3
+    SENTINEL_INTERNAL_KEY=sentinel-internal-key-2026
+
+  Do NOT change SENTINEL_INTERNAL_KEY — it must match the Agentic AI backend.
+
+--------------------------------------------------------------------------------
+  STEP 3.5 — Run database migrations
+--------------------------------------------------------------------------------
+
+  python manage.py migrate
+
+  This creates the SQLite database with all required tables.
+
+--------------------------------------------------------------------------------
+  STEP 3.6 — Create demo users
+--------------------------------------------------------------------------------
+
+  python manage.py create_demo_users
+
+  This creates 3 accounts:
+
+    Role      | Email                    | Password
+    ----------|--------------------------|------------------
+    Admin     | admin@sentinell.ai       | Admin123!
+    Employee  | employee@sentinell.ai    | Emp123!!
+    Intern    | intern@sentinell.ai      | Int123!!
+
+--------------------------------------------------------------------------------
+  STEP 3.7 — Start Sentinell.AI
+--------------------------------------------------------------------------------
+
+  python manage.py runserver
+
+  You should see:
+    Starting development server at http://127.0.0.1:8000/
+    Quit the server with CTRL-BREAK.
+
+  Keep this terminal open. Do NOT close it.
+
+  Open browser: http://localhost:8000
+  Login with:   admin@sentinell.ai / Admin123!
+
+================================================================================
+  SECTION 4 — AGENTIC AI BACKEND SETUP (Express.js — Service 2)
+================================================================================
+
+Open Terminal 2 and follow these steps.
+
+--------------------------------------------------------------------------------
+  STEP 4.1 — Navigate to the backend folder
+--------------------------------------------------------------------------------
+
+  cd agentic-ai-app/backend
+
+--------------------------------------------------------------------------------
+  STEP 4.2 — Install Node.js dependencies
+--------------------------------------------------------------------------------
+
+  npm install
+
+  Wait for it to complete. This installs Express, TypeScript, and all packages.
+
+--------------------------------------------------------------------------------
+  STEP 4.3 — Check the .env file
+--------------------------------------------------------------------------------
+
+  The .env file is already configured. Verify it contains:
+
+    PORT=3001
+    OLLAMA_BASE_URL=http://localhost:11434
+    OLLAMA_MODEL=qwen2.5-coder:1.5b
+    SENTINEL_BASE_URL=http://localhost:8000
+    SENTINEL_INTERNAL_KEY=sentinel-internal-key-2026
+
+    DEMO_USER_1=admin@agenticai.demo:AgentAdmin@2026:ADMIN
+    DEMO_USER_2=employee@agenticai.demo:AgentEmp@2026:EMPLOYEE
+    DEMO_USER_3=intern@agenticai.demo:AgentIntern@2026:INTERN
+
+  IMPORTANT: SENTINEL_INTERNAL_KEY must be the same value as in UniSys Project/.env
+
+--------------------------------------------------------------------------------
+  STEP 4.4 — Start the backend
+--------------------------------------------------------------------------------
+
+  npm run dev
+
+  You should see:
+    Agentic AI Backend running on http://localhost:3001
+    API:    http://localhost:3001/api
+    Health: http://localhost:3001/health
+
+  Keep this terminal open. Do NOT close it.
+
+  Verify it is working:
+  Open browser: http://localhost:3001/health
+  You should see a JSON response with  "status": "ok"  and  "ollama": { "connected": true }
+
+  If ollama connected shows false — make sure Ollama is running (Section 2).
+
+================================================================================
+  SECTION 5 — AGENTIC AI FRONTEND SETUP (Next.js — Service 3)
+================================================================================
+
+Open Terminal 3 and follow these steps.
+
+--------------------------------------------------------------------------------
+  STEP 5.1 — Navigate to the frontend folder
+--------------------------------------------------------------------------------
+
+  cd agentic-ai-app/frontend
+
+--------------------------------------------------------------------------------
+  STEP 5.2 — Install Node.js dependencies
+--------------------------------------------------------------------------------
+
+  npm install
+
+  Wait for it to complete.
+
+--------------------------------------------------------------------------------
+  STEP 5.3 — Check the .env.local file
+--------------------------------------------------------------------------------
+
+  The .env.local file is already configured. Verify it contains:
+
+    NEXT_PUBLIC_DEFAULT_MODEL=qwen2.5-coder:1.5b
+    NEXT_PUBLIC_API_URL=http://localhost:3001
+
+--------------------------------------------------------------------------------
+  STEP 5.4 — Start the frontend
+--------------------------------------------------------------------------------
+
+  npm run dev
+
+  You should see:
+    ready - started server on 0.0.0.0:3000, url: http://localhost:3000
+
+  Keep this terminal open. Do NOT close it.
+
+  Open browser: http://localhost:3000
+  You will see the Agentic AI login screen.
+
+================================================================================
+  SECTION 6 — LOGIN CREDENTIALS
+================================================================================
+
+  SENTINELL.AI (http://localhost:8000)
+  ─────────────────────────────────────
+  Admin     | admin@sentinell.ai       | Admin123!
+  Employee  | employee@sentinell.ai    | Emp123!!
+  Intern    | intern@sentinell.ai      | Int123!!
+
+  AGENTIC AI CHAT (http://localhost:3000)
+  ────────────────────────────────────────
+  Admin     | admin@agenticai.demo     | AgentAdmin@2026
+  Employee  | employee@agenticai.demo  | AgentEmp@2026
+  Intern    | intern@agenticai.demo    | AgentIntern@2026
+
+  NOTE: These are two separate login systems.
+  Sentinell.AI has its own accounts for the web firewall interface.
+  Agentic AI has its own accounts for the chat interface.
+  Both systems share the same role levels (Admin / Employee / Intern).
+
+================================================================================
+  SECTION 7 — VERIFY EVERYTHING IS WORKING
+================================================================================
+
+  After all 4 services are running, do these checks:
+
+  CHECK 1 — Ollama
+    Open: http://localhost:11434
+    Expected: "Ollama is running"
+
+  CHECK 2 — Sentinell.AI
+    Open: http://localhost:8000
+    Expected: Login page loads
+
+  CHECK 3 — Agentic AI Backend
+    Open: http://localhost:3001/health
+    Expected: JSON with "status": "ok" and "ollama": { "connected": true }
+
+  CHECK 4 — Agentic AI Frontend
+    Open: http://localhost:3000
+    Expected: Login screen loads
+
+  CHECK 5 — Full Integration Test
+    1. Login to http://localhost:3000 as admin@agenticai.demo / AgentAdmin@2026
+    2. Type a message: "Hello, can you help me with Python?"
+    3. AI should respond
+    4. Login to http://localhost:8000 as admin@sentinell.ai / Admin123!
+    5. Go to Logs page
+    6. You should see the message you just sent in the logs with risk score
+
+  If CHECK 5 works — the full integration is working correctly.
+
+================================================================================
+  SECTION 8 — STARTUP ORDER (IMPORTANT — READ THIS CAREFULLY)
+================================================================================
+
+  Always start services in this exact order:
+
+    1. Ollama          (must be running first — AI model)
+    2. Sentinell.AI    (must be running before Agentic AI backend)
+    3. Agentic AI Backend
+    4. Agentic AI Frontend
+
+  !! CRITICAL — WHY SENTINELL.AI MUST RUN BEFORE AGENTIC AI BACKEND !!
+  ─────────────────────────────────────────────────────────────────────
+  The Agentic AI backend calls Sentinell.AI on EVERY single chat message.
+  It makes 3 API calls to Sentinell.AI for each message:
+
+    Call 1 → POST /tokenize-prompt   (mask PII before sending to AI)
+    Call 2 → POST /analyze-advanced  (scan for threats — ALLOW or BLOCK)
+    Call 3 → POST /log-agentic       (log the result to Sentinell.AI dashboard)
+
+  If Sentinell.AI is NOT running when you send a chat message:
+    - The message will fail or be blocked
+    - The AI will not respond
+    - You will see a connection error in the backend terminal
+
+  So the rule is simple:
+    Sentinell.AI on port 8000 MUST be running BEFORE you use the chat.
+
+  ─────────────────────────────────────────────────────────────────────
+  CORRECT startup sequence every time:
+  ─────────────────────────────────────────────────────────────────────
+
+    TERMINAL 1 — Start Sentinell.AI FIRST
+      cd "UniSys Project"
+      venv\Scripts\activate
+      python manage.py runserver
+      → Wait until you see: "Starting development server at http://127.0.0.1:8000/"
+
+    TERMINAL 2 — Start Agentic AI Backend SECOND (after Sentinell.AI is up)
+      cd agentic-ai-app/backend
+      npm run dev
+      → Wait until you see: "Agentic AI Backend running on http://localhost:3001"
+
+    TERMINAL 3 — Start Agentic AI Frontend THIRD
+      cd agentic-ai-app/frontend
+      npm run dev
+      → Wait until you see: "ready - started server on 0.0.0.0:3000"
+
+    Ollama starts automatically on Windows — no terminal needed.
+
+  ─────────────────────────────────────────────────────────────────────
+  HOW TO VERIFY THE CONNECTION IS WORKING
+  ─────────────────────────────────────────────────────────────────────
+
+  After all services are running, open:
+    http://localhost:3001/health
+
+  You should see:
+    {
+      "status": "ok",
+      "ollama": { "connected": true }
+    }
+
+  Then send a test message in the chat at http://localhost:3000
+  Watch Terminal 2 (backend). You should see lines like:
+    [Sentinel] TOKENIZE → action=ALLOW was_tokenized=false
+    [Sentinel] PROMPT scan → SAFE | risk=0 | trust=1.00
+
+  These lines confirm Sentinell.AI and Agentic AI are talking to each other.
+
+================================================================================
+  SECTION 9 — QUICK RESTART (After First Setup)
+================================================================================
+
+  Once everything is set up, to restart the system:
+
+  Terminal 1 (Sentinell.AI):
+    cd "UniSys Project"
+    venv\Scripts\activate
+    python manage.py runserver
+
+  Terminal 2 (Agentic AI Backend):
+    cd agentic-ai-app/backend
+    npm run dev
+
+  Terminal 3 (Agentic AI Frontend):
+    cd agentic-ai-app/frontend
+    npm run dev
+
+  Ollama starts automatically on Windows boot — no action needed.
+
+================================================================================
+  SECTION 10 — TROUBLESHOOTING
+================================================================================
+
+  PROBLEM: Chat not working — AI not responding at all
+  SOLUTION:
+    - This almost always means Sentinell.AI is NOT running
+    - The Agentic AI backend REQUIRES Sentinell.AI to be up on port 8000
+    - Open Terminal 1 and start Sentinell.AI first:
+        cd "UniSys Project"
+        venv\Scripts\activate
+        python manage.py runserver
+    - Wait for "Starting development server at http://127.0.0.1:8000/"
+    - Then restart the backend in Terminal 2:
+        cd agentic-ai-app/backend
+        npm run dev
+    - Now try the chat again
+
+  PROBLEM: Ollama not connected (health check shows false)
+  SOLUTION:
+    - Check Ollama is running: look for icon in system tray
+    - Open terminal and run: ollama serve
+    - Verify model is downloaded: ollama list
+
+  PROBLEM: "qwen2.5-coder:1.5b not found" error
+  SOLUTION:
+    - Run: ollama pull qwen2.5-coder:1.5b
+    - Wait for download to complete
+
+  PROBLEM: Sentinell.AI not starting — "No module named django"
+  SOLUTION:
+    - Make sure virtual environment is activated: venv\Scripts\activate
+    - Run: pip install -r requirements.txt
+
+  PROBLEM: Agentic AI backend not connecting to Sentinell.AI
+  SOLUTION:
+    - Make sure Sentinell.AI is running on port 8000
+    - Check SENTINEL_INTERNAL_KEY is the same in both .env files:
+        UniSys Project/.env          → SENTINEL_INTERNAL_KEY=sentinel-internal-key-2026
+        agentic-ai-app/backend/.env  → SENTINEL_INTERNAL_KEY=sentinel-internal-key-2026
+
+  PROBLEM: Frontend shows blank page or error
+  SOLUTION:
+    - Make sure backend is running on port 3001
+    - Check NEXT_PUBLIC_API_URL=http://localhost:3001 in frontend/.env.local
+    - Restart frontend: Ctrl+C then npm run dev
+
+  PROBLEM: Chat messages are being blocked unexpectedly
+  SOLUTION:
+    - This is Sentinell.AI working correctly
+    - Check what was detected in the Sentinell.AI logs page
+    - Try a different message without sensitive data
+
+  PROBLEM: Port already in use error
+  SOLUTION:
+    - Another process is using that port
+    - Windows: open Task Manager → find the process using the port → end it
+    - Or restart your computer and try again
+
+================================================================================
+  SECTION 11 — PORT REFERENCE
+================================================================================
+
+  Service                | Port  | URL
+  -----------------------|-------|---------------------------
+  Sentinell.AI (Django)  | 8000  | http://localhost:8000
+  Agentic AI Backend     | 3001  | http://localhost:3001
+  Agentic AI Frontend    | 3000  | http://localhost:3000
+  Ollama LLM             | 11434 | http://localhost:11434
+
+================================================================================
+  SECTION 12 — FILE STRUCTURE REFERENCE
+================================================================================
+
+  Project Root/
+  ├── UniSys Project/          ← Sentinell.AI (Django)
+  │   ├── manage.py
+  │   ├── requirements.txt
+  │   ├── .env                 ← Sentinell.AI config
+  │   ├── db.sqlite3           ← Auto-created after migrate
+  │   ├── firewall/            ← Core security engine
+  │   ├── users/               ← Auth and RBAC
+  │   └── templates/           ← Web UI templates
+  │
+  └── agentic-ai-app/          ← Agentic AI Chat App
+      ├── backend/             ← Express.js API (port 3001)
+      │   ├── .env             ← Backend config
+      │   └── src/
+      └── frontend/            ← Next.js UI (port 3000)
+          ├── .env.local       ← Frontend config
+          └── src/
+
+================================================================================
+  END OF SETUP MANUAL
+================================================================================
